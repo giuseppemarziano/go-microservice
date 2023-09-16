@@ -1,11 +1,17 @@
-package route
+package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	"main/infrastructure/controller" // adjust the import path
+	"go-microservice/infrastructure/controller"
 )
 
-// NewRouter initializes and returns a new router
-func Init(e *echo.Echo) {
-	e.GET("/hello", controller.HelloController)
+// SetupRoutes sets up all the routes for the application
+func SetupRoutes() *echo.Echo {
+	e := echo.New()
+
+	homeController := controller.NewHomeController()
+
+	e.GET("/", homeController.Home)
+
+	return e
 }
