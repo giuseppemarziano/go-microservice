@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-
+	"fmt"
+	_ "github.com/labstack/echo/v4" // import echo
 	"go-microservice/infrastructure/container"
+	"go-microservice/infrastructure/routes" // import your routes
+	"log"
+	_ "net/http"
 )
 
 func main() {
@@ -13,16 +15,13 @@ func main() {
 	ctx := context.Background()
 	c := container.NewContainer(ctx)
 
-	// Create a simple HTTP router (this should be more complex in a real app)
-	router := http.NewServeMux()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, world!"))
-	})
+	// Setup Echo routes (replace this with your actual routes setup function)
+	e := routes.SetupRoutes()
 
 	// Get the configured HTTP server from the container
-	server := c.SetupHTTPServer(ctx, router)
-
+	server := c.SetupHTTPServer(ctx, e) // Pass Echo router here
+	fmt.Println(server)
 	// Start the HTTP server
 	log.Println("Starting server on :8080")
-	log.Fatal(server.ListenAndServe())
+	e.Logger.Fatal(e.Start(":8080")) // Use Echo's start method
 }

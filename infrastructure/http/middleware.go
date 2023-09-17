@@ -1,38 +1,33 @@
 package http
 
 import (
+	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
 )
 
-// AuthenticationMiddleware is a middleware for authenticating user requests
-func AuthenticationMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Extract the Authorization header from the request
-		authorizationHeader := r.Header.Get("Authorization")
-		if authorizationHeader == "" {
-			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-			return
+func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		authorization := c.Request().Header.Get("Authorization")
+		if authorization == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing Authorization header")
 		}
 
-		// Extract the token from the Authorization header
-		splitToken := strings.Split(authorizationHeader, "Bearer ")
+		splitToken := strings.Split(authorization, "Bearer ")
 		if len(splitToken) != 2 {
-			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-			return
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid Authorization header format")
 		}
 		tokenString := splitToken[1]
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Replace 'YourSecretKey' with your actual secret key
 			return []byte("YourSecretKey"), nil
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
 
-		next.ServeHTTP(w, r)
-	})
+		return next(c)
+	}
 }
