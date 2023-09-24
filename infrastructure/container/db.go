@@ -1,24 +1,29 @@
 package container
 
 import (
+	"fmt"
+	"github.com/palantir/stacktrace"
 	"go-microservice/domain/entities"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
 )
 
-func NewGormDBConnection(dsn string) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Error opening database with GORM: %v", err)
-	}
-
-	return db
+var EntityTypes = []interface{}{
+	&entities.User{},
+	&entities.Post{},
 }
 
-func InitializeTables(db *gorm.DB) {
-	err := db.AutoMigrate(&entities.User{})
+func NewGormDBConnection(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return
+		return nil, stacktrace.Propagate(err, "Failed to open database with GORM")
 	}
+
+	for _, entityType := range EntityTypes {
+		if err := db.AutoMigrate(entityType); err != nil {
+			return nil, stacktrace.Propagate(err, fmt.Sprintf("Failed to auto-migrate table for %T", entityType))
+		}
+	}
+
+	return db, nil
 }

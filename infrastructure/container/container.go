@@ -2,9 +2,9 @@ package container
 
 import (
 	"context"
-	"errors"
+	"github.com/labstack/gommon/log"
+	"gorm.io/gorm"
 	"net/http"
-	"os"
 )
 
 type contextKey string
@@ -12,24 +12,31 @@ type contextKey string
 const ContainerKey contextKey = "Container"
 
 type Container struct {
-	Database interface{}
-	Http     *http.Client
-	Config   Config
+	HTTPClient *http.Client
+	HTTPServer *http.Server
+	DB         *gorm.DB
+	Config     Config
+	Services   Services
 }
 
-func NewContainer(ctx context.Context) (*Container, error) {
-	dsn := os.Getenv("DATABASE_DSN")
-	if dsn == "" {
-		return nil, errors.New("database DSN is not set")
+func NewContainer(ctx context.Context, router http.Handler) (*Container, error) {
+	cfg, err := NewConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	dbConnection := NewGormDBConnection(dsn)
-	httpClient := SetupHTTP()
-	config := NewConfig()
+	dbConnection, err := NewGormDBConnection(cfg.DatabaseDSN)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := SetupHTTPClient(cfg)
+	httpServer := SetupHTTPServer(cfg, router)
 
 	return &Container{
-		Database: dbConnection,
-		Http:     httpClient,
-		Config:   config,
+		HTTPClient: httpClient,
+		HTTPServer: httpServer,
+		DB:         dbConnection,
+		Config:     *cfg,
 	}, nil
 }

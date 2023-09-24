@@ -3,12 +3,12 @@ package entities
 import "time"
 
 type Post struct {
-	ID        uint `gorm:"primaryKey"`
-	UserID    uint
-	Title     string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uint      `gorm:"primaryKey;autoIncrement"`
+	UserID    uint      `gorm:"not null;index"`
+	Title     string    `gorm:"size:255;not null"`
+	Content   string    `gorm:"type:text;not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 func (Post) TableName() string {

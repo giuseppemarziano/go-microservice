@@ -2,15 +2,23 @@ package container
 
 import (
 	"context"
-	"go-microservice/domain/service"
+	_ "go-microservice/domain/entities"
+	"go-microservice/domain/repositories"
+	"go-microservice/domain/services"
+	"go-microservice/infrastructure/persistence/mysql"
 )
 
 var _ Services = &Container{}
 
 type Services interface {
-	GetHelloWorldService(ctx context.Context) service.TestService
+	GetUserRepository(ctx context.Context) repositories.UserRepository
+	GetCreateUserService(ctx context.Context) services.Creator
 }
 
-func (c *Container) GetHelloWorldService(ctx context.Context) service.TestService {
-	return service.NewTestService()
+func (c *Container) GetCreateUserService(ctx context.Context) services.Creator {
+	return services.NewCreatorService(ctx, c.GetUserRepository(ctx))
+}
+
+func (c *Container) GetUserRepository(ctx context.Context) repositories.UserRepository {
+	return mysql.NewUserRepository(c.DB)
 }

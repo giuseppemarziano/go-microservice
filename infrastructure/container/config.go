@@ -1,52 +1,28 @@
 package container
 
 import (
-	"log"
-	"os"
-	"strconv"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/palantir/stacktrace"
+	"time"
 )
 
-type config struct {
-	DatabaseDSN string
-	HttpTimeout int
+type Config struct {
+	DatabaseDSN       string        `required:"true" envconfig:"DATABASE_DSN"`
+	HTTPTimeout       int           `default:"30" envconfig:"HTTP_TIMEOUT"`
+	HTTPClientTimeout time.Duration `default:"30s" envconfig:"HTTP_CLIENT_TIMEOUT"`
+	HTTPServerAddr    string        `default:":8080" envconfig:"HTTP_SERVER_ADDR"`
 }
 
-type Config interface {
-	GetDatabaseDSN() string
-	GetHttpTimeout() int
-}
-
-func (c *config) GetDatabaseDSN() string {
-	return c.DatabaseDSN
-}
-
-func (c *config) GetHttpTimeout() int {
-	return c.HttpTimeout
-}
-
-func NewConfig() Config {
-	return &config{
-		DatabaseDSN: getEnv("DATABASE_DSN", "default_dsn"),
-		HttpTimeout: getEnvAsInt("HTTP_TIMEOUT", 30),
+func NewConfig() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		return nil, stacktrace.NewError("Error loading .env file")
 	}
-}
 
-func getEnv(key string, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		return nil, stacktrace.Propagate(err, "Error loading config from environment variables")
 	}
-	return defaultValue
-}
 
-func getEnvAsInt(key string, defaultValue int) int {
-	valueStr, exists := os.LookupEnv(key)
-	if !exists {
-		return defaultValue
-	}
-	value, err := strconv.Atoi(valueStr)
-	if err != nil {
-		log.Printf("Warning: %s environment variable should be an integer, using default: %d", key, defaultValue)
-		return defaultValue
-	}
-	return value
+	return &cfg, nil
 }

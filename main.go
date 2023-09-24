@@ -12,18 +12,23 @@ import (
 
 func main() {
 	ctx := context.Background()
-	c, err := container.NewContainer(ctx)
+
+	router := routes.SetupRoutes()
+
+	c, err := container.NewContainer(ctx, router)
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
 	}
 
-	e := routes.SetupRoutes()
-
-	server := c.SetupHTTPServer(e)
-	fmt.Printf("Server Setup Complete: %+v\n", server)
+	server := c.HTTPServer
+	if server == nil {
+		log.Fatal("Server not initialized")
+	}
 
 	addr := server.Addr
+	fmt.Printf("Server Setup Complete: %+v\n", server)
 	log.Printf("Starting server on %s\n", addr)
+
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("Server failed: %v", err)
 	}
