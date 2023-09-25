@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"github.com/labstack/gommon/log"
+	"go-microservice/infrastructure/routes"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -16,10 +17,9 @@ type Container struct {
 	HTTPServer *http.Server
 	DB         *gorm.DB
 	Config     Config
-	Services   Services
 }
 
-func NewContainer(ctx context.Context, router http.Handler) (*Container, error) {
+func NewContainer(ctx context.Context) (*Container, error) {
 	cfg, err := NewConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -31,7 +31,7 @@ func NewContainer(ctx context.Context, router http.Handler) (*Container, error) 
 	}
 
 	httpClient := SetupHTTPClient(cfg)
-	httpServer := SetupHTTPServer(cfg, router)
+	httpServer := SetupHTTPServer(cfg, routes.SetupRoutes())
 
 	return &Container{
 		HTTPClient: httpClient,

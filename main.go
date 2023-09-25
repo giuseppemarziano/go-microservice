@@ -2,20 +2,14 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"go-microservice/infrastructure/container"
-	"go-microservice/infrastructure/routes"
 	"log"
-	"net/http"
 )
 
 func main() {
 	ctx := context.Background()
 
-	router := routes.SetupRoutes()
-
-	c, err := container.NewContainer(ctx, router)
+	c, err := container.NewContainer(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
 	}
@@ -25,11 +19,9 @@ func main() {
 		log.Fatal("Server not initialized")
 	}
 
-	addr := server.Addr
-	fmt.Printf("Server Setup Complete: %+v\n", server)
-	log.Printf("Starting server on %s\n", addr)
+	log.Printf("Starting server on %s\n", server.Addr)
 
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
