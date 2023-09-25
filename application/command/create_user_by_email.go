@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"go-microservice/domain/entities"
 	"go-microservice/domain/services"
 )
 
@@ -16,7 +15,13 @@ func NewCreateUserByEmailCommand(creatorService services.Creator) CreateUserByEm
 	}
 }
 
-func (c *CreateUserByEmailCommand) Do(ctx context.Context, credentials entities.User) error {
+type UserRegistrationRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (c *CreateUserByEmailCommand) Do(ctx context.Context, credentials UserRegistrationRequest) error {
 	err := c.creatorService.Create(ctx, credentials)
 	if err != nil {
 		return err
