@@ -17,23 +17,22 @@ type UserRegistrationRequest struct {
 
 type RegisterController struct{}
 
-func NewRegisterController() RegisterController {
+func NewCreateUserController() RegisterController {
 	return RegisterController{}
 }
 
-func (uc *RegisterController) Register(ctx echo.Context, c container.Container) error {
+func (uc *RegisterController) Create(ctx echo.Context, c container.Container) error {
+	fmt.Println("test")
 	var request UserRegistrationRequest
 	if err := ctx.Bind(&request); err != nil {
-		fmt.Println("Error")
 		return ctx.JSON(http.StatusBadRequest, "Invalid request payload")
 	}
-
-	fmt.Println("Hello world.")
-
+	fmt.Println("test2, ", request)
 	if err := ctx.Validate(&request); err != nil {
 		return ctx.JSON(http.StatusBadRequest, "Validation error: "+err.Error())
 	}
 
+	fmt.Println("test3, ", request)
 	createUserCommand := c.GetCreateUserByEmailCommand(context.Background())
 
 	err := createUserCommand.Do(context.Background(), command.UserRegistrationRequest(request))

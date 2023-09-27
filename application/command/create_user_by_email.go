@@ -22,7 +22,7 @@ type UserRegistrationRequest struct {
 }
 
 func (c *CreateUserByEmailCommand) Do(ctx context.Context, credentials UserRegistrationRequest) error {
-	err := c.creatorService.Create(ctx, services.UserRegistrationRequest(credentials))
+	err := c.creatorService.Create(services.UserRegistrationRequest(credentials))
 	if err != nil {
 		return err
 	}

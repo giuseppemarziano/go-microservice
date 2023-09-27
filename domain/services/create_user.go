@@ -8,7 +8,7 @@ import (
 )
 
 type Creator interface {
-	Create(ctx context.Context, credentials UserRegistrationRequest) error
+	Create(credentials UserRegistrationRequest) error
 }
 
 type creator struct {
@@ -27,13 +27,13 @@ type UserRegistrationRequest struct {
 	Password string
 }
 
-func (c *creator) Create(ctx context.Context, credentials UserRegistrationRequest) error {
+func (c *creator) Create(credentials UserRegistrationRequest) error {
 	credentialsData := entities.User{
 		Email:    credentials.Email,
 		Password: credentials.Password,
 	}
 
-	err := c.userRepository.CreateUser(ctx, &credentialsData)
+	err := c.userRepository.CreateUser(&credentialsData)
 	if err != nil {
 		return stacktrace.Propagate(err, "error on creating user with email: %s", credentials.Email)
 	}

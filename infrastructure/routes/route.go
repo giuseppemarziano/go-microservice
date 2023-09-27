@@ -9,13 +9,15 @@ import (
 func SetupRoutes(c container.Container) *echo.Echo {
 	e := echo.New()
 
-	homeController := controller.NewHomeController()
-	registerController := controller.NewRegisterController()
+	createUserController := controller.NewCreateUserController()
+	retrieveUsersController := controller.NewRetrieveUsers()
 
-	e.GET("/", homeController.Home)
+	e.GET("/retrieve-users", func(ctx echo.Context) error {
+		return retrieveUsersController.Retrieve(ctx, c)
+	})
 
 	e.POST("/register", func(ctx echo.Context) error {
-		return registerController.Register(ctx, c)
+		return createUserController.Create(ctx, c)
 	})
 
 	return e
