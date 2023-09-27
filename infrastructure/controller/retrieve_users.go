@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"go-microservice/infrastructure/container"
 	"net/http"
@@ -18,7 +17,6 @@ func (gu *RetrieveUsers) Retrieve(ctx echo.Context, c container.Container) error
 
 	users, err := getAllUsersQuery.Do(ctx.Request().Context())
 	if err != nil {
-		fmt.Println(err)
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Failed to retrieve users: " + err.Error()})
 	}
 
