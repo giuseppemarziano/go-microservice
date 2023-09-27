@@ -1,15 +1,14 @@
 package main
 
 import (
-	"context"
 	"go-microservice/infrastructure/container"
-	"go-microservice/infrastructure/routes"
+	"go-microservice/infrastructure/route"
 	"log"
 )
 
 func main() {
 	// Initialize container
-	c, err := container.NewContainer(context.Background())
+	c, err := container.NewContainer()
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
 	}
@@ -19,7 +18,7 @@ func main() {
 	if server == nil {
 		log.Fatal("Server not initialized")
 	}
-	server.Handler = routes.SetupRoutes(*c)
+	server.Handler = route.SetupRoutes(*c)
 
 	// Start the server
 	log.Printf("Starting server on %s\n", server.Addr)

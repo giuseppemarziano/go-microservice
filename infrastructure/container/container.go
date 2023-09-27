@@ -1,7 +1,6 @@
 package container
 
 import (
-	"context"
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 	"net/http"
@@ -18,7 +17,7 @@ type RouteHandler interface {
 	SetupRoutes() http.Handler
 }
 
-func NewContainer(ctx context.Context) (*Container, error) {
+func NewContainer() (*Container, error) {
 	cfg, err := NewConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)

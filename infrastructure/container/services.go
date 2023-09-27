@@ -6,7 +6,7 @@ import (
 	"go-microservice/application/query"
 	_ "go-microservice/domain/entities"
 	"go-microservice/domain/repositories"
-	"go-microservice/domain/services"
+	"go-microservice/domain/service"
 	"go-microservice/infrastructure/persistence/mysql"
 )
 
@@ -15,13 +15,13 @@ var _ Services = &Container{}
 type Services interface {
 	GetUserRepository(ctx context.Context) repositories.UserRepository
 
-	GetRegisterUserService(ctx context.Context) services.Creator
+	GetRegisterUserService(ctx context.Context) service.Creator
 
 	GetCreateUserByEmailCommand(ctx context.Context) command.CreateUserByEmailCommand
 }
 
-func (c *Container) GetRegisterUserService(ctx context.Context) services.Creator {
-	return services.NewCreatorService(ctx, c.GetUserRepository(ctx))
+func (c *Container) GetRegisterUserService(ctx context.Context) service.Creator {
+	return service.NewCreatorService(ctx, c.GetUserRepository(ctx))
 }
 
 func (c *Container) GetUserRepository(ctx context.Context) repositories.UserRepository {
