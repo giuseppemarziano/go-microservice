@@ -11,10 +11,9 @@ func SetupHTTPClient(cfg *Config) *http.Client {
 	}
 }
 
-func SetupHTTPServer(cfg *Config, router http.Handler) *http.Server {
+func SetupHTTPServer(cfg *Config) *http.Server {
 	return &http.Server{
 		Addr:         cfg.HTTPServerAddr,
-		Handler:      router,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,

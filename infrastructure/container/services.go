@@ -22,7 +22,7 @@ func (c *Container) GetRegisterUserService(ctx context.Context) services.Creator
 }
 
 func (c *Container) GetUserRepository(ctx context.Context) repositories.UserRepository {
-	return mysql.NewUserRepository(c.DB)
+	return mysql.NewUserRepository(ctx, c.DB)
 }
 
 func (c *Container) GetCreateUserByEmailCommand(ctx context.Context) command.CreateUserByEmailCommand {

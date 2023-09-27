@@ -8,16 +8,18 @@ import (
 )
 
 type userRepository struct {
-	db *gorm.DB
+	ctx context.Context
+	db  *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) repositories.UserRepository {
+func NewUserRepository(ctx context.Context, db *gorm.DB) repositories.UserRepository {
 	return &userRepository{
-		db: db,
+		ctx: ctx,
+		db:  db,
 	}
 }
 
-func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
-	result := r.db.WithContext(ctx).Create(user)
+func (r *userRepository) CreateUser(user *entities.User) error {
+	result := r.db.WithContext(r.ctx).Create(user)
 	return result.Error
 }

@@ -3,20 +3,19 @@ package container
 import (
 	"context"
 	"github.com/labstack/gommon/log"
-	"go-microservice/infrastructure/routes"
 	"gorm.io/gorm"
 	"net/http"
 )
-
-type contextKey string
-
-const ContainerKey contextKey = "Container"
 
 type Container struct {
 	HTTPClient *http.Client
 	HTTPServer *http.Server
 	DB         *gorm.DB
 	Config     Config
+}
+
+type RouteHandler interface {
+	SetupRoutes() http.Handler
 }
 
 func NewContainer(ctx context.Context) (*Container, error) {
@@ -30,12 +29,9 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
-	httpClient := SetupHTTPClient(cfg)
-	httpServer := SetupHTTPServer(cfg, routes.SetupRoutes())
-
 	return &Container{
-		HTTPClient: httpClient,
-		HTTPServer: httpServer,
+		HTTPClient: SetupHTTPClient(cfg),
+		HTTPServer: SetupHTTPServer(cfg),
 		DB:         dbConnection,
 		Config:     *cfg,
 	}, nil
