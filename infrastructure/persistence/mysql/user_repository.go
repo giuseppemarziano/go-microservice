@@ -64,3 +64,23 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 	}
 	return &user, nil
 }
+
+func (r *userRepository) GetUserByUUID(ctx context.Context, uuid string) (*entities.User, error) {
+	var user entities.User
+	result := r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, stacktrace.Propagate(
+				result.Error,
+				"error on retrieving user: user with UUID %s does not exist",
+				uuid,
+			)
+		}
+		return nil, stacktrace.Propagate(
+			result.Error,
+			"error on retrieving user with UUID: %s",
+			uuid,
+		)
+	}
+	return &user, nil
+}

@@ -20,6 +20,10 @@ type Services interface {
 
 	GetCreateUserByEmailCommand(ctx context.Context) command.CreateUserByEmailCommand
 	GetCreateUserAuthenticationCommand(ctx context.Context) command.AuthenticateUserCommand
+
+	GetGetAllUsersQuery(ctx context.Context) query.GetAllUsersQuery
+	GetGetUserByEmailQuery(ctx context.Context) query.GetUserByEmailQuery
+	GetGetUserByUUIDQuery(ctx context.Context) query.GetUserByUUIDQuery
 }
 
 // Services
@@ -52,4 +56,12 @@ func (c *Container) GetCreateUserAuthenticationCommand(ctx context.Context) comm
 
 func (c *Container) GetGetAllUsersQuery(ctx context.Context) query.GetAllUsersQuery {
 	return query.NewGetAllUsersQuery(c.GetUserRepository(ctx))
+}
+
+func (c *Container) GetGetUserByEmailQuery(ctx context.Context) query.GetUserByEmailQuery {
+	return query.NewGetUserByEmailQuery(c.GetUserRepository(ctx))
+}
+
+func (c *Container) GetGetUserByUUIDQuery(ctx context.Context) query.GetUserByUUIDQuery {
+	return query.NewGetUserByUUIDQuery(c.GetUserRepository(ctx))
 }
