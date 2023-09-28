@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"context"
+	"errors"
 	"go-microservice/domain/entities"
 	"go-microservice/domain/repositories"
 	"gorm.io/gorm"
@@ -26,14 +27,21 @@ func (r *userRepository) CreateUser(user *entities.User) error {
 
 func (r *userRepository) GetAll(ctx context.Context) ([]entities.User, error) {
 	var users []entities.User
-
-	// Perform the database query to find all users
 	result := r.db.Find(&users)
-
-	// Check for errors
 	if result.Error != nil {
 		return nil, result.Error
 	}
-
 	return users, nil
+}
+
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*entities.User, error) {
+	var user entities.User
+	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user with the given email does not exist")
+		}
+		return nil, result.Error
+	}
+	return &user, nil
 }

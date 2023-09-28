@@ -3,15 +3,13 @@ package controller
 import (
 	"context"
 	"fmt"
-	"go-microservice/infrastructure/container"
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 	"go-microservice/application/command"
+	"go-microservice/infrastructure/container"
+	"net/http"
 )
 
-// RegisterController is an empty struct as per requirement.
-type RegisterController struct{}
+type CreateUserController struct{}
 
 type UserRegistrationRequest struct {
 	Firstname string `json:"firstname" validate:"required"`
@@ -20,22 +18,30 @@ type UserRegistrationRequest struct {
 	Password  string `json:"password" validate:"required"`
 }
 
-func NewCreateUserController() RegisterController {
-	return RegisterController{}
+func NewCreateUserController() CreateUserController {
+	return CreateUserController{}
 }
 
-func (rc RegisterController) Create(echo echo.Context, c container.Container) error {
-	var request command.UserRegistrationRequest
+func (rc CreateUserController) Create(echo echo.Context, c container.Container) error {
+	var request UserRegistrationRequest
 	if err := echo.Bind(&request); err != nil {
-		fmt.Println(err)
-		return echo.JSON(http.StatusBadRequest, "error")
+		return echo.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	if err := echo.Validate(&request); err != nil {
+		return echo.JSON(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
 	}
 
 	ctx := context.Background()
 
 	createUserCommand := c.GetCreateUserByEmailCommand(ctx)
 
-	err := createUserCommand.Do(ctx, request)
+	err := createUserCommand.Do(ctx, command.UserRegistrationRequest{
+		Firstname: request.Firstname,
+		Surname:   request.Surname,
+		Email:     request.Email,
+		Password:  request.Password,
+	})
 
 	if err != nil {
 		fmt.Println("Failed to create user:", err)
