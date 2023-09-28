@@ -39,10 +39,10 @@ func (ac AuthController) Login(echo echo.Context, c container.Container) error {
 	})
 
 	if err != nil {
-		return echo.JSON(http.StatusUnauthorized, "invalid credentials")
+		return echo.JSON(http.StatusUnauthorized, err.Error())
 	}
 
 	return echo.JSON(http.StatusOK, map[string]string{
-		"token": token,
+		"token": *token,
 	})
 }

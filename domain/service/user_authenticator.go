@@ -13,7 +13,7 @@ import (
 )
 
 type UserAuthenticator interface {
-	Authenticate(credentials UserAuthenticationRequest) (string, error)
+	Authenticate(credentials UserAuthenticationRequest) (*string, error)
 }
 
 type userAuthenticationService struct {
@@ -36,20 +36,26 @@ type UserAuthenticationRequest struct {
 	Password string
 }
 
-func (s *userAuthenticationService) Authenticate(credentials UserAuthenticationRequest) (string, error) {
+func (s *userAuthenticationService) Authenticate(credentials UserAuthenticationRequest) (*string, error) {
 	user, err := s.userRepository.GetUserByEmail(s.ctx, credentials.Email)
 	if err != nil {
 		if errors.Is(err, domError.UserNotFound{
 			Email: credentials.Email,
 		}) {
-			return "", stacktrace.Propagate(err, "User not found")
+			return nil, stacktrace.Propagate(
+				err,
+				"User not found")
 		}
-		return "", stacktrace.Propagate(err, "Failed to retrieve user")
+		return nil, stacktrace.Propagate(
+			err,
+			"error on retrieving user")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Invalid credentials")
+		return nil, stacktrace.Propagate(
+			err,
+			"invalid credentials")
 	}
 
 	// Create a new token
@@ -62,8 +68,11 @@ func (s *userAuthenticationService) Authenticate(credentials UserAuthenticationR
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to generate user token")
+		return nil, stacktrace.Propagate(
+			err,
+			"error on generating user token",
+		)
 	}
 
-	return tokenString, nil
+	return &tokenString, nil
 }

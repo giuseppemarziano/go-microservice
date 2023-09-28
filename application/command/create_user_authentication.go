@@ -21,7 +21,7 @@ type UserAuthenticationRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-func (c *AuthenticateUserCommand) Do(ctx context.Context, credentials UserAuthenticationRequest) (string, error) {
+func (c *AuthenticateUserCommand) Do(ctx context.Context, credentials UserAuthenticationRequest) (*string, error) {
 	serviceCredentials := service.UserAuthenticationRequest{
 		Email:    credentials.Email,
 		Password: credentials.Password,
@@ -29,7 +29,7 @@ func (c *AuthenticateUserCommand) Do(ctx context.Context, credentials UserAuthen
 
 	token, err := c.authenticationService.Authenticate(serviceCredentials)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to authenticate user")
+		return nil, stacktrace.Propagate(err, "Failed to authenticate user")
 	}
 
 	return token, nil

@@ -29,7 +29,7 @@ type Services interface {
 // Services
 
 func (c *Container) GetCreateUserService(ctx context.Context) service.UserCreator {
-	return service.NewCreatorService(ctx, c.GetUserRepository(ctx), c.Config.BCryptCost)
+	return service.NewCreatorService(ctx, c.GetUserRepository(ctx), c.config.BCryptCost)
 }
 
 func (c *Container) GetUserAuthenticatorService(ctx context.Context) service.UserAuthenticator {
@@ -39,7 +39,7 @@ func (c *Container) GetUserAuthenticatorService(ctx context.Context) service.Use
 // Repositories
 
 func (c *Container) GetUserRepository(ctx context.Context) repositories.UserRepository {
-	return mysql.NewUserRepository(ctx, c.DB)
+	return mysql.NewUserRepository(ctx, c.db)
 }
 
 // Commands

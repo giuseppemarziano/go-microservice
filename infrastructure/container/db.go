@@ -4,17 +4,22 @@ import (
 	"fmt"
 	"github.com/palantir/stacktrace"
 	"go-microservice/domain/entities"
-	"go-microservice/domain/valueobject"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
+// EntityTypes holds a list of all entity types that need to be auto-migrated by GORM.
 var EntityTypes = []interface{}{
 	&entities.User{},
-	&valueobject.Post{},
+	&entities.Post{},
 }
 
-func NewGormDBConnection(dsn string) (*gorm.DB, error) {
+// NewGormDBConnection initializes a new GORM database connection using individual components and auto-migrates the defined entity types.
+func NewGormDBConnection(user, password, host, port, dbName, params string) (*gorm.DB, error) {
+	// construct DSN from individual components
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s%s", user, password, host, port, dbName, params)
+
+	// open a new database connection using GORM with the constructed DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -22,6 +27,7 @@ func NewGormDBConnection(dsn string) (*gorm.DB, error) {
 			"error on opening database with GORM")
 	}
 
+	// auto-migrate tables for each entity type defined in EntityTypes
 	for _, entityType := range EntityTypes {
 		if err := db.AutoMigrate(entityType); err != nil {
 			return nil, stacktrace.Propagate(
@@ -31,5 +37,6 @@ func NewGormDBConnection(dsn string) (*gorm.DB, error) {
 		}
 	}
 
+	// return the initialized database connection
 	return db, nil
 }

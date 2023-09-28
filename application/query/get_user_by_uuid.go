@@ -20,7 +20,10 @@ func NewGetUserByUUIDQuery(userRepository repositories.UserRepository) GetUserBy
 func (guu *GetUserByUUIDQuery) Do(ctx context.Context, uuid string) (*entities.User, error) {
 	user, err := guu.userRepository.GetUserByUUID(ctx, uuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "error retrieving user by uuid: %s", uuid)
+		return nil, stacktrace.Propagate(
+			err,
+			"error retrieving user by uuid: %s",
+			uuid)
 	}
 	return user, nil
 }

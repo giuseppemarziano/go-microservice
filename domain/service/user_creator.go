@@ -2,14 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 	"github.com/google/uuid"
 	"github.com/palantir/stacktrace"
 	"go-microservice/domain/entities"
 	domError "go-microservice/domain/error"
 	"go-microservice/domain/repositories"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"strings"
 )
 
@@ -55,7 +53,7 @@ func (c *creator) Create(credentials UserCreationRequest) error {
 	}
 
 	existingUser, err := c.userRepository.GetUserByEmail(c.ctx, credentials.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"error on retrieving user with email: %s",

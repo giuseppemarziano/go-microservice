@@ -50,11 +50,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, stacktrace.Propagate(
-				result.Error,
-				"error on retrieving user: user with email %s does not exist",
-				email,
-			)
+			return nil, nil
 		}
 		return nil, stacktrace.Propagate(
 			result.Error,

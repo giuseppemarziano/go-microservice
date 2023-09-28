@@ -7,22 +7,22 @@ import (
 )
 
 func main() {
-	// Initialize container
+	// initialize dependency injection container
 	c, err := container.NewContainer()
 	if err != nil {
-		log.Fatalf("Failed to create container: %v", err)
+		log.Fatalf("failed to create container: %v", err)
 	}
 
-	// Get the HTTP server from the container and set the Echo instance as its Handler
+	// retrieve http server from container and set up routes
 	server := c.HTTPServer
 	if server == nil {
-		log.Fatal("Server not initialized")
+		log.Fatal("server not initialized")
 	}
 	server.Handler = route.SetupRoutes(*c)
 
-	// Start the server
-	log.Printf("Starting server on %s\n", server.Addr)
+	// start the http server
+	log.Printf("starting server on %s\n", server.Addr)
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("Server failed: %v", err)
+		log.Fatalf("server failed: %v", err)
 	}
 }
