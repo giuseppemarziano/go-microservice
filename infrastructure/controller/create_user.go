@@ -2,16 +2,17 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"go-microservice/application/command"
 	"go-microservice/infrastructure/container"
+	"go-microservice/infrastructure/controller/response"
 	"net/http"
 )
 
-type CreateUserController struct{}
+type CreateUserController struct {
+}
 
-type UserRegistrationRequest struct {
+type UserCreationRequest struct { // Define the UserRegistrationRequest type
 	Firstname string `json:"firstname" validate:"required"`
 	Surname   string `json:"surname" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
@@ -23,19 +24,18 @@ func NewCreateUserController() CreateUserController {
 }
 
 func (rc CreateUserController) Create(echo echo.Context, c container.Container) error {
-	var request UserRegistrationRequest
+	var request UserCreationRequest
 	if err := echo.Bind(&request); err != nil {
-		return echo.JSON(http.StatusBadRequest, "Invalid request payload")
+		return echo.JSON(http.StatusBadRequest, response.NewCreateUserResponse("invalid request payload"))
 	}
 
 	if err := echo.Validate(&request); err != nil {
-		return echo.JSON(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
+		return echo.JSON(http.StatusBadRequest, response.NewCreateUserResponse("error on validation"))
 	}
 
 	ctx := context.Background()
 
 	createUserCommand := c.GetCreateUserByEmailCommand(ctx)
-
 	err := createUserCommand.Do(ctx, command.UserRegistrationRequest{
 		Firstname: request.Firstname,
 		Surname:   request.Surname,
@@ -44,8 +44,10 @@ func (rc CreateUserController) Create(echo echo.Context, c container.Container) 
 	})
 
 	if err != nil {
-		fmt.Println("Failed to create user:", err)
-		return echo.JSON(http.StatusInternalServerError, "Internal Server Error")
+		return echo.JSON(
+			http.StatusInternalServerError,
+			response.NewCreateUserResponse("internal server error"),
+		)
 	}
 
 	return echo.JSON(http.StatusCreated, "User created successfully")

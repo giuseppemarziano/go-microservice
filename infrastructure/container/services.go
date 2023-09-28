@@ -23,7 +23,7 @@ type Services interface {
 // Services
 
 func (c *Container) GetCreateUserService(ctx context.Context) service.UserCreator {
-	return service.NewCreatorService(ctx, c.GetUserRepository(ctx))
+	return service.NewCreatorService(ctx, c.GetUserRepository(ctx), c.Config.BCryptCost)
 }
 
 // Repositories

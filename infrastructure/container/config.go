@@ -12,6 +12,8 @@ type Config struct {
 	HTTPTimeout       int           `default:"30" envconfig:"HTTP_TIMEOUT"`
 	HTTPClientTimeout time.Duration `default:"30s" envconfig:"HTTP_CLIENT_TIMEOUT"`
 	HTTPServerAddr    string        `default:":8080" envconfig:"HTTP_SERVER_ADDR"`
+
+	BCryptCost int `default:"14" envconfig:"BCRYPT_COST"`
 }
 
 func NewConfig() (*Config, error) {

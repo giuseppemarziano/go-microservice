@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"errors"
+	"github.com/palantir/stacktrace"
 	"go-microservice/domain/entities"
 	"go-microservice/domain/repositories"
 	"gorm.io/gorm"
@@ -22,14 +23,24 @@ func NewUserRepository(ctx context.Context, db *gorm.DB) repositories.UserReposi
 
 func (r *userRepository) CreateUser(user *entities.User) error {
 	result := r.db.WithContext(r.ctx).Create(user)
-	return result.Error
+	if result.Error != nil {
+		return stacktrace.Propagate(
+			result.Error,
+			"error on creating user with email: %s",
+			user.Email,
+		)
+	}
+	return nil
 }
 
 func (r *userRepository) GetAll(ctx context.Context) ([]entities.User, error) {
 	var users []entities.User
 	result := r.db.Find(&users)
 	if result.Error != nil {
-		return nil, result.Error
+		return nil, stacktrace.Propagate(
+			result.Error,
+			"error on retrieving all users",
+		)
 	}
 	return users, nil
 }
@@ -39,9 +50,17 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user with the given email does not exist")
+			return nil, stacktrace.Propagate(
+				result.Error,
+				"error on retrieving user: user with email %s does not exist",
+				email,
+			)
 		}
-		return nil, result.Error
+		return nil, stacktrace.Propagate(
+			result.Error,
+			"error on retrieving user with email: %s",
+			email,
+		)
 	}
 	return &user, nil
 }
