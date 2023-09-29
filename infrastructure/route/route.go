@@ -25,6 +25,7 @@ func SetupRoutes(c container.Container) *echo.Echo {
 	createUserController := controller.NewCreateUserController()
 	retrieveUsersController := controller.NewRetrieveUsers()
 	retrieveUserByUUIDController := controller.NewGetUserByUUID()
+	retrieveUserByEmailController := controller.NewGetUserByEmail()
 	authController := controller.NewAuthController()
 
 	e.GET(
@@ -46,6 +47,13 @@ func SetupRoutes(c container.Container) *echo.Echo {
 		"/register",
 		func(ctx echo.Context) error {
 			return createUserController.Create(ctx, c)
+		},
+	)
+
+	e.POST(
+		"/get-user-by-uuid",
+		func(ctx echo.Context) error {
+			return retrieveUserByEmailController.RetrieveByEmail(ctx, c)
 		},
 	)
 
