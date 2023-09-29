@@ -24,14 +24,22 @@ func SetupRoutes(c container.Container) *echo.Echo {
 
 	createUserController := controller.NewCreateUserController()
 	retrieveUsersController := controller.NewRetrieveUsers()
+	retrieveUserByUUIDController := controller.NewGetUserByUUID()
 	authController := controller.NewAuthController()
 
 	e.GET(
 		"/retrieve-users",
 		func(ctx echo.Context) error {
-			return retrieveUsersController.Retrieve(ctx, c)
+			return retrieveUsersController.RetrieveAll(ctx, c)
 		},
 		http.AuthenticationMiddleware,
+	)
+
+	e.POST(
+		"/get-user-by-uuid",
+		func(ctx echo.Context) error {
+			return retrieveUserByUUIDController.RetrieveByUUID(ctx, c)
+		},
 	)
 
 	e.POST(

@@ -12,13 +12,13 @@ func NewRetrieveUsers() RetrieveUsers {
 	return RetrieveUsers{}
 }
 
-func (gu *RetrieveUsers) Retrieve(ctx echo.Context, c container.Container) error {
+func (gu *RetrieveUsers) RetrieveAll(ctx echo.Context, c container.Container) error {
 	getAllUsersQuery := c.GetGetAllUsersQuery(ctx.Request().Context())
 	users, err := getAllUsersQuery.Do(ctx.Request().Context())
 	if err != nil {
 		return ctx.JSON(
 			http.StatusBadRequest,
-			map[string]string{"error": "Failed to retrieve users: " + err.Error()},
+			nil,
 		)
 	}
 
