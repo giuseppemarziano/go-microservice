@@ -30,7 +30,6 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// validate the algorithm
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
@@ -46,14 +45,12 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, "authentication failed")
 		}
 
-		// token expiry
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Unix(int64(exp), 0).Before(time.Now()) {
 				return echo.NewHTTPError(http.StatusUnauthorized, "token expired")
 			}
 		}
 
-		// token issue time
 		if nbf, ok := claims["nbf"].(float64); ok {
 			if time.Unix(int64(nbf), 0).After(time.Now()) {
 				return echo.NewHTTPError(http.StatusUnauthorized, "token not valid yet")

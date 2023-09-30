@@ -58,13 +58,11 @@ func (s *userAuthenticationService) Authenticate(credentials UserAuthenticationR
 			"invalid credentials")
 	}
 
-	// Create a new token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": user.UUID,
 		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	// Sign and get the complete encoded token as a string
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {

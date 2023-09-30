@@ -25,5 +25,6 @@ func (guu *GetUserByUUIDQuery) Do(ctx context.Context, uuid string) (*entities.U
 			"error retrieving user by uuid: %s",
 			uuid)
 	}
+
 	return user, nil
 }
