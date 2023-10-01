@@ -17,6 +17,8 @@ type Services interface {
 
 	GetCreateUserService(ctx context.Context) service.UserCreator
 	GetUserAuthenticatorService(ctx context.Context) service.UserAuthenticator
+	GetPasswordHasherService(ctx context.Context) service.PasswordHasher
+	GetPasswordCheckerService(ctx context.Context) service.PasswordChecker
 
 	GetCreateUserByEmailCommand(ctx context.Context) command.CreateUserByEmailCommand
 	GetCreateUserAuthenticationCommand(ctx context.Context) command.AuthenticateUserCommand
@@ -29,11 +31,19 @@ type Services interface {
 // Services
 
 func (c *Container) GetCreateUserService(ctx context.Context) service.UserCreator {
-	return service.NewCreatorService(ctx, c.GetUserRepository(ctx), c.config.BCryptCost)
+	return service.NewCreatorService(ctx, c.GetUserRepository(ctx), c.GetPasswordHasherService(ctx))
 }
 
 func (c *Container) GetUserAuthenticatorService(ctx context.Context) service.UserAuthenticator {
 	return service.NewUserAuthenticationService(ctx, c.GetUserRepository(ctx))
+}
+
+func (c *Container) GetPasswordHasherService(ctx context.Context) service.PasswordHasher {
+	return service.NewPasswordHasher(ctx, c.config.BCryptCost)
+}
+
+func (c *Container) GetPasswordCheckerService(ctx context.Context) service.PasswordChecker {
+	return service.NewPasswordChecker(ctx, c.GetUserRepository(ctx))
 }
 
 // Repositories
