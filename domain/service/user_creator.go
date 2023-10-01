@@ -7,7 +7,6 @@ import (
 	"go-microservice/domain/entities"
 	domError "go-microservice/domain/error"
 	"go-microservice/domain/repositories"
-	"golang.org/x/crypto/bcrypt"
 	"strings"
 )
 
@@ -20,18 +19,18 @@ type UserCreator interface {
 type creator struct {
 	ctx            context.Context
 	userRepository repositories.UserRepository
-	bcryptCost     int
+	passwordHasher PasswordHasher
 }
 
 func NewCreatorService(
 	ctx context.Context,
 	repository repositories.UserRepository,
-	bcryptCost int,
+	passwordHasher PasswordHasher,
 ) UserCreator {
 	return &creator{
 		ctx:            ctx,
 		userRepository: repository,
-		bcryptCost:     bcryptCost,
+		passwordHasher: passwordHasher,
 	}
 }
 
@@ -69,7 +68,7 @@ func (c *creator) Create(credentials UserCreationRequest) error {
 		)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(credentials.Password), c.bcryptCost)
+	hashedPassword, err := c.passwordHasher.Hash(credentials.Password)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -83,7 +82,7 @@ func (c *creator) Create(credentials UserCreationRequest) error {
 		Firstname: &credentials.Firstname,
 		Surname:   &credentials.Surname,
 		Email:     credentials.Email,
-		Password:  string(hashedPassword),
+		Password:  hashedPassword,
 	}
 
 	err = c.userRepository.CreateUser(&credentialsData)
