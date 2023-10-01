@@ -21,10 +21,20 @@ type Config struct {
 	HTTPServerAddr    string        `default:":8080" envconfig:"HTTP_SERVER_ADDR"`
 
 	BCryptCost int `default:"14" envconfig:"BCRYPT_COST"`
+
+	RabbitMQURL string `default:"amqp://guest:guest@localhost:5672/" envconfig:"RABBITMQ_URL"`
 }
 
 func (cfg *Config) DatabaseDSN() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s%s", cfg.DatabaseUser, cfg.DatabasePassword, cfg.DatabaseHost, cfg.DatabasePort, cfg.DatabaseName, cfg.DatabaseParams)
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s%s",
+		cfg.DatabaseUser,
+		cfg.DatabasePassword,
+		cfg.DatabaseHost,
+		cfg.DatabasePort,
+		cfg.DatabaseName,
+		cfg.DatabaseParams,
+	)
 }
 
 func NewConfig() (*Config, error) {
