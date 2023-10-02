@@ -2,15 +2,18 @@ package message
 
 import (
 	"context"
+	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
+	"go-microservice/infrastructure/message/messagebus"
 	"log"
 )
 
 type EventHandler interface {
-	Handle(ctx context.Context, msg interface{}) error
+	Handle(ctx context.Context, msg []byte) error
 }
 
 type Handler struct {
+	bus      *MessageBus
 	conn     *amqp.Connection
 	channel  *amqp.Channel
 	handlers map[string]EventHandler
@@ -27,6 +30,7 @@ func NewHandler(connectionString string) (*Handler, error) {
 	}
 
 	return &Handler{
+		bus:      NewMessageBus(),
 		conn:     conn,
 		channel:  channel,
 		handlers: make(map[string]EventHandler),
@@ -34,7 +38,21 @@ func NewHandler(connectionString string) (*Handler, error) {
 }
 
 func (h *Handler) RegisterEventHandler(eventType string, handler EventHandler) {
+	h.bus.Subscribe(eventType, h.DispatchToHandlers)
 	h.handlers[eventType] = handler
+}
+
+func (h *Handler) DispatchToHandlers(msg messagebus.Message) {
+	handler, exists := h.handlers[msg.RoutingKey]
+	if !exists {
+		log.Printf("No handler registered for message type %s", msg.RoutingKey)
+		return
+	}
+
+	err := handler.Handle(context.Background(), msg.Payload)
+	if err != nil {
+		log.Printf("Error handling message: %v", err)
+	}
 }
 
 func (h *Handler) StartListening(queueName string) error {
@@ -48,26 +66,18 @@ func (h *Handler) StartListening(queueName string) error {
 		nil,   // args
 	)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "error consuming ")
 	}
 
-	forever := make(chan bool)
 	go func() {
 		for d := range messages {
-			handler, exists := h.handlers[d.RoutingKey]
-			if !exists {
-				log.Printf("No handler registered for message type %s", d.RoutingKey)
-				continue
+			msg := messagebus.Message{
+				RoutingKey: d.RoutingKey,
+				Payload:    d.Body,
 			}
-
-			err := handler.Handle(context.Background(), d.Body)
-			if err != nil {
-				log.Printf("Error handling message: %v", err)
-			}
+			h.bus.Publish(msg)
 		}
 	}()
-
-	<-forever
 	return nil
 }
 
