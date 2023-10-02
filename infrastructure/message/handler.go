@@ -2,10 +2,12 @@ package message
 
 import (
 	"context"
+	"fmt"
 	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
 	"go-microservice/infrastructure/message/messagebus"
 	"log"
+	"time"
 )
 
 type EventHandler interface {
@@ -13,7 +15,7 @@ type EventHandler interface {
 }
 
 type Handler struct {
-	bus      *MessageBus
+	bus      *Bus
 	conn     *amqp.Connection
 	channel  *amqp.Channel
 	handlers map[string]EventHandler
@@ -42,6 +44,8 @@ func (h *Handler) RegisterEventHandler(eventType string, handler EventHandler) {
 	h.handlers[eventType] = handler
 }
 
+const maxRetries = 3 // TODO add as env variable
+
 func (h *Handler) DispatchToHandlers(msg messagebus.Message) {
 	handler, exists := h.handlers[msg.RoutingKey]
 	if !exists {
@@ -49,9 +53,18 @@ func (h *Handler) DispatchToHandlers(msg messagebus.Message) {
 		return
 	}
 
-	err := handler.Handle(context.Background(), msg.Payload)
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		err := handler.Handle(msg.Ctx, msg.Payload)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second * 2) // TODO add env variable for wait time
+	}
+
 	if err != nil {
-		log.Printf("Error handling message: %v", err)
+		log.Printf("Error handling message after %d attempts: %v", maxRetries, err)
+		// TODO add logic to send the message to a dead-letter queue or other error handling mechanisms.
 	}
 }
 
@@ -59,26 +72,47 @@ func (h *Handler) StartListening(queueName string) error {
 	messages, err := h.channel.Consume(
 		queueName,
 		"",
-		true,  // auto-ack
+		false, // manual-ack (set to false)
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
 		nil,   // args
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "error consuming ")
+		return stacktrace.Propagate(err, "error consuming")
 	}
 
 	go func() {
 		for d := range messages {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10) // Adjust the timeout as needed
+			defer cancel()
+
 			msg := messagebus.Message{
 				RoutingKey: d.RoutingKey,
 				Payload:    d.Body,
+				Ctx:        ctx,
 			}
-			h.bus.Publish(msg)
+			err := h.processMessage(msg)
+			if err != nil {
+				log.Printf("Error processing message: %v", err)
+			} else {
+				err := d.Ack(false)
+				if err != nil {
+					return
+				}
+			}
 		}
 	}()
 	return nil
+}
+
+func (h *Handler) processMessage(msg messagebus.Message) error {
+	handler, exists := h.handlers[msg.RoutingKey]
+	if !exists {
+		return fmt.Errorf("no handler registered for message type %s", msg.RoutingKey)
+	}
+	// Use the context from the Message when calling the handler
+	return handler.Handle(msg.Ctx, msg.Payload)
 }
 
 func (h *Handler) Close() error {
