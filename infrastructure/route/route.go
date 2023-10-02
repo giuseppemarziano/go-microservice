@@ -8,15 +8,7 @@ import (
 	"go-microservice/infrastructure/http"
 )
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
-}
-
-func SetupRoutes(c container.Container) *echo.Echo {
+func Routes(c container.Container) *echo.Echo {
 	e := echo.New()
 
 	validate := validator.New()

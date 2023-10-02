@@ -18,7 +18,7 @@ func main() {
 	if server == nil {
 		log.Fatal("server not initialized")
 	}
-	server.Handler = route.SetupRoutes(*c)
+	server.Handler = route.Routes(*c)
 
 	// start the http server
 	log.Printf("starting server on %s\n", server.Addr)

@@ -7,6 +7,7 @@ import (
 	"github.com/streadway/amqp"
 	"go-microservice/infrastructure/message/messagebus"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -111,19 +112,28 @@ func (h *Handler) processMessage(msg messagebus.Message) error {
 	if !exists {
 		return fmt.Errorf("no handler registered for message type %s", msg.RoutingKey)
 	}
-	// Use the context from the Message when calling the handler
+
 	return handler.Handle(msg.Ctx, msg.Payload)
 }
 
 func (h *Handler) Close() error {
+	var errs []string
+
 	if h.channel != nil {
 		err := h.channel.Close()
 		if err != nil {
-			return err
+			errs = append(errs, err.Error())
 		}
 	}
 	if h.conn != nil {
-		return h.conn.Close()
+		err := h.conn.Close()
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("errors while closing: %s", strings.Join(errs, "; "))
 	}
 	return nil
 }
