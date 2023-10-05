@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
+	domError "go-microservice/domain/error"
 	"go-microservice/infrastructure/message/messagebus"
 	"log"
 	"strings"
@@ -25,11 +26,11 @@ type Handler struct {
 func NewHandler(connectionString string) (*Handler, error) {
 	conn, err := amqp.Dial(connectionString)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "error on dialing rabbitmq")
 	}
 	channel, err := conn.Channel()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "error on creating rabbitmq channel")
 	}
 
 	return &Handler{
@@ -60,12 +61,11 @@ func (h *Handler) DispatchToHandlers(msg messagebus.Message) {
 		if err == nil {
 			break
 		}
-		time.Sleep(time.Second * 2) // TODO add env variable for wait time
+		time.Sleep(time.Second * 2)
 	}
 
 	if err != nil {
-		log.Printf("Error handling message after %d attempts: %v", maxRetries, err)
-		// TODO add logic to send the message to a dead-letter queue or other error handling mechanisms.
+		log.Printf("error handling message after %d attempts: %v", maxRetries, err)
 	}
 }
 
@@ -80,12 +80,12 @@ func (h *Handler) StartListening(queueName string) error {
 		nil,   // args
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "error consuming")
+		return stacktrace.Propagate(err, "error on consuming from queue")
 	}
 
 	go func() {
 		for d := range messages {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10) // Adjust the timeout as needed
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 
 			msg := messagebus.Message{
@@ -95,11 +95,11 @@ func (h *Handler) StartListening(queueName string) error {
 			}
 			err := h.processMessage(msg)
 			if err != nil {
-				log.Printf("Error processing message: %v", err)
+				log.Printf("error on processing message: %v", err)
 			} else {
 				err := d.Ack(false)
 				if err != nil {
-					return
+					log.Printf("error on acknowledging message: %v", err)
 				}
 			}
 		}
@@ -110,10 +110,17 @@ func (h *Handler) StartListening(queueName string) error {
 func (h *Handler) processMessage(msg messagebus.Message) error {
 	handler, exists := h.handlers[msg.RoutingKey]
 	if !exists {
-		return fmt.Errorf("no handler registered for message type %s", msg.RoutingKey)
+		return stacktrace.Propagate(
+			domError.HandlerNotFound{RoutingKey: msg.RoutingKey},
+			"error on finding handler for routing key",
+		)
 	}
 
-	return handler.Handle(msg.Ctx, msg.Payload)
+	return stacktrace.Propagate(
+		handler.Handle(msg.Ctx, msg.Payload),
+		"error on handling message for routing key %s",
+		msg.RoutingKey,
+	)
 }
 
 func (h *Handler) Close() error {
