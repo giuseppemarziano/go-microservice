@@ -39,7 +39,7 @@ func (c *Container) GetUserAuthenticatorService(ctx context.Context) service.Use
 }
 
 func (c *Container) GetPasswordHasherService(ctx context.Context) service.PasswordHasher {
-	return service.NewPasswordHasher(ctx, c.Config.BCryptCost)
+	return service.NewPasswordHasher(ctx, c.config.BCryptCost)
 }
 
 func (c *Container) GetPasswordCheckerService(ctx context.Context) service.PasswordChecker {
