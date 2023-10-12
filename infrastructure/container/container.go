@@ -11,7 +11,8 @@ type Container struct {
 	HTTPClient *http.Client
 	HTTPServer *http.Server
 	db         *gorm.DB
-	config     Config
+	Config     Config
+	Publisher  Publisher
 }
 
 // RouteHandler interface defines a method for setting up HTTP routes.
@@ -40,11 +41,25 @@ func NewContainer() (*Container, error) {
 		return nil, err
 	}
 
+	publisher, err := NewPublisher("amqp://your_connection_string")
+	if err != nil {
+		log.Fatalf("Failed to create publisher: %v", err)
+	}
+
 	// initialize and return a new Container with all dependencies
 	return &Container{
 		HTTPClient: SetupHTTPClient(cfg),
 		HTTPServer: SetupHTTPServer(cfg),
 		db:         dbConnection,
-		config:     *cfg,
+		Config:     *cfg,
+		Publisher:  *publisher,
 	}, nil
+}
+
+// Close releases all resources in the container.
+func (c *Container) Close() error {
+	if err := c.Publisher.Close(); err != nil {
+		return err
+	}
+	return nil
 }
