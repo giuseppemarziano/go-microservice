@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"github.com/palantir/stacktrace"
@@ -10,23 +11,18 @@ import (
 	"strings"
 )
 
-type passwordChecker struct {
+type PasswordManager interface {
+	Check(email string, password string) error
+	Hash(password string) (string, error)
+}
+
+type passwordManager struct {
 	ctx            context.Context
+	cryptCost      int
 	userRepository repositories.UserRepository
 }
 
-type PasswordChecker interface {
-	Check(email string, password string) error
-}
-
-func NewPasswordChecker(ctx context.Context, repo repositories.UserRepository) PasswordChecker {
-	return &passwordChecker{
-		ctx:            ctx,
-		userRepository: repo,
-	}
-}
-
-func (pc *passwordChecker) Check(email string, password string) error {
+func (pc *passwordManager) Check(email string, password string) error {
 	email = strings.ToLower(email)
 
 	user, err := pc.userRepository.GetUserByEmail(pc.ctx, email)
@@ -74,7 +70,7 @@ func (pc *passwordChecker) Check(email string, password string) error {
 
 	if !comparePasswords(hashedPassword, storedHash) {
 		return stacktrace.Propagate(
-			errors.New("password mismatch"), // TODO add domain error
+			errors.New("password mismatch"),
 			"error on password verification for user: %s",
 			email,
 		)
@@ -92,4 +88,27 @@ func comparePasswords(a, b []byte) bool {
 		result |= a[i] ^ b[i]
 	}
 	return result == 0
+}
+
+func (pc *passwordManager) Hash(password string) (string, error) {
+	if password == "" {
+		return "", stacktrace.Propagate(
+			errors.New("password cannot be empty"), // TODO add domain error
+			"error on hashing",
+		)
+	}
+
+	salt := make([]byte, pc.cryptCost)
+	if _, err := rand.Read(salt); err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"error on generating random salt for password hashing",
+		)
+	}
+
+	hashedPassword := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
+
+	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
+	encodedPassword := base64.RawStdEncoding.EncodeToString(hashedPassword)
+	return "$argon2id$" + encodedSalt + "$" + encodedPassword, nil
 }
